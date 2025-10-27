@@ -1,0 +1,55 @@
+# Environment files
+.env
+.env.local
+.env.production
+
+# Logs
+*.log
+logs/
+/var/log/
+
+# Database backups
+*.sql
+backups/
+/opt/backups/
+
+# Uploads (keep structure but ignore content)
+uploads/faces/*
+!uploads/faces/.gitkeep
+
+# Cache
+cache/
+tmp/
+temp/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Composer
+vendor/
+composer.lock
+
+# Node modules (if any)
+node_modules/
+npm-debug.log*
+
+# Deployment files (keep scripts but ignore local configs)
+/opt/deployments/.env
+/opt/deployments/local_*
+
+# SSL certificates
+*.pem
+*.key
+*.crt
+
+# Local configuration overrides
+config/local.php
+config/production.php
