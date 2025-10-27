@@ -1,0 +1,48 @@
+name: Security Scan
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # Run daily at 2 AM
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Run PHP Security Check
+      uses: symfonycorp/security-checker-action@v7
+      
+    - name: Run CodeQL Analysis
+      uses: github/codeql-action/init@v3
+      with:
+        languages: php
+        
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+      
+    - name: Check for SQL Injection vulnerabilities
+      run: |
+        echo "Checking for SQL injection vulnerabilities..."
+        if grep -r "mysql_query\|mysqli_query" . --include="*.php"; then
+          echo "❌ Found potential SQL injection vulnerabilities!"
+          exit 1
+        else
+          echo "✅ No obvious SQL injection vulnerabilities found"
+        fi
+        
+    - name: Check for XSS vulnerabilities
+      run: |
+        echo "Checking for XSS vulnerabilities..."
+        if grep -r "echo.*\$_GET\|echo.*\$_POST\|echo.*\$_REQUEST" . --include="*.php"; then
+          echo "❌ Found potential XSS vulnerabilities!"
+          exit 1
+        else
+          echo "✅ No obvious XSS vulnerabilities found"
+        fi

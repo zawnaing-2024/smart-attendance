@@ -1,0 +1,72 @@
+name: Deploy to Production Ubuntu Server
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+        - production
+        - staging
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup SSH
+      uses: webfactory/ssh-agent@v0.7.0
+      with:
+        ssh-private-key: ${{ secrets.SERVER_SSH_KEY }}
+        
+    - name: Deploy to server
+      run: |
+        ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} '
+          # Create deployment directory if it doesn'\''t exist
+          mkdir -p /opt/deployments
+          
+          # Download and run deployment script
+          curl -o /opt/deployments/deploy.sh https://raw.githubusercontent.com/zawnaing-2024/smart_attendance/main/.github/scripts/deploy.sh
+          chmod +x /opt/deployments/deploy.sh
+          
+          # Run deployment
+          /opt/deployments/deploy.sh ${{ github.event.inputs.environment || '\''production'\'' }}
+        '
+        
+    - name: Health Check
+      run: |
+        ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} '
+          # Wait for deployment to complete
+          sleep 10
+          
+          # Run health check
+          /opt/deployments/health-check.sh
+          
+          # Check if application is responding
+          if curl -f -s http://localhost/smart_attendance > /dev/null; then
+            echo "✅ Deployment successful - Application is responding"
+          else
+            echo "❌ Deployment failed - Application not responding"
+            exit 1
+          fi
+        '
+        
+    - name: Notify on Success
+      if: success()
+      run: |
+        echo "🚀 Deployment to ${{ github.event.inputs.environment || 'production' }} completed successfully!"
+        echo "Application URL: http://${{ secrets.SERVER_HOST }}/smart_attendance"
+        
+    - name: Notify on Failure
+      if: failure()
+      run: |
+        echo "❌ Deployment to ${{ github.event.inputs.environment || 'production' }} failed!"
+        echo "Check the server logs for more details."

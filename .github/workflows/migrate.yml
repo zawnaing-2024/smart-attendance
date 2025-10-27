@@ -1,0 +1,35 @@
+name: Database Migration
+
+on:
+  workflow_dispatch:
+    inputs:
+      migration_file:
+        description: 'Migration file to run'
+        required: true
+        type: string
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup SSH
+      uses: webfactory/ssh-agent@v0.7.0
+      with:
+        ssh-private-key: ${{ secrets.SERVER_SSH_KEY }}
+        
+    - name: Run Database Migration
+      run: |
+        ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} '
+          # Create backup before migration
+          BACKUP_TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+          mysqldump -u attendance_user -p"${{ secrets.DB_PASSWORD }}" smart_attendance > /opt/backups/smart_attendance/migration_backup_$BACKUP_TIMESTAMP.sql
+          
+          # Run migration
+          mysql -u attendance_user -p"${{ secrets.DB_PASSWORD }}" smart_attendance < database/migrations/${{ github.event.inputs.migration_file }}
+          
+          echo "✅ Database migration completed successfully!"
+        '
