@@ -223,3 +223,4 @@ This project is proprietary software. All rights reserved.
 
 **Note**: This system is designed for educational institutions and requires proper setup and configuration for production use. Ensure all security measures are in place before deployment.
 # smart_attendance
+# smart-attendance
